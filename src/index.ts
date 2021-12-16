@@ -95,6 +95,7 @@ export function parse(text: string) {
             break;
           case 'period':
             state = 'nested-section';
+            section += token.lexeme;
             break;
           default:
             break;
