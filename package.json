@@ -1,6 +1,14 @@
 {
   "name": "ini-config",
   "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT"
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prestart": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.0"
+  }
 }
