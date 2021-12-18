@@ -1,172 +1,197 @@
-type State = 'default' | 'key' | 'nested-key' | 'equal' | 'comment' | 'value' | 'section-start' | 'nested-section' | 'section';
-type TokenType = 'string' | 'equal' | 'sb-open' | 'sb-close' | 'new-line' | 'semicolon' | 'period' | 'eof';
-type Token = { type: TokenType, lexeme: string };
+type State =
+  | 'default'
+  | 'key'
+  | 'nested-key'
+  | 'equal'
+  | 'comment'
+  | 'value'
+  | 'section-start'
+  | 'nested-section'
+  | 'section';
+type TokenType =
+  | 'string'
+  | 'equal'
+  | 'sb-open'
+  | 'sb-close'
+  | 'new-line'
+  | 'semicolon'
+  | 'period'
+  | 'eof';
+type Token = { type: TokenType; lexeme: string };
+type DictObject = { [key: string]: string | DictObject };
 
-export function parse(text: string) {
-  let i = 0;
-  function getNextToken(): Token {
-    if (i === text.length) return { type: 'eof', lexeme: '' }
-    let ch = text[i];
+class Parser {
+  private text!: string;
+  private pos: number = 0;
+
+  getNextToken(): Token {
+    if (this.pos === this.text.length) return { type: 'eof', lexeme: '' };
+    let ch = this.text[this.pos];
     if (isWhiteSpace(ch)) {
-      while (i < text.length && isWhiteSpace(text[i])) i++;
-      ch = text[i];
+      while (this.pos < this.text.length && isWhiteSpace(this.text[this.pos]))
+        this.pos++;
+      ch = this.text[this.pos];
     }
     let val = '';
     let token!: Token;
     if (isCharacter(ch)) {
-      while (i < text.length && isCharacter(text[i])) {
-        val += text[i];
-        i++;
+      while (this.pos < this.text.length && isCharacter(this.text[this.pos])) {
+        val += this.text[this.pos];
+        this.pos++;
       }
-      i--;
+      this.pos--;
       token = { type: 'string', lexeme: val };
     } else if (ch === '=') {
       token = { type: 'equal', lexeme: ch };
     } else if (ch === ';') {
-      token = { type: 'semicolon', lexeme: ch }
+      token = { type: 'semicolon', lexeme: ch };
     } else if (ch === '[') {
       token = { type: 'sb-open', lexeme: ch };
     } else if (ch === ']') {
       token = { type: 'sb-close', lexeme: ch };
     } else if (ch === '\r') {
-      if (i + 1 < text.length && text[i + 1] === '\n') {
-        i++;
-        token = { type: 'new-line', lexeme: '\r\n' }
-      }
-      else token = { type: 'new-line', lexeme: '\r' }
+      if (this.pos + 1 < this.text.length && this.text[this.pos + 1] === '\n') {
+        this.pos++;
+        token = { type: 'new-line', lexeme: '\r\n' };
+      } else token = { type: 'new-line', lexeme: '\r' };
     } else if (ch === '\n') {
-      token = { type: 'new-line', lexeme: ch }
+      token = { type: 'new-line', lexeme: ch };
     } else if (ch === '.') {
       token = { type: 'period', lexeme: ch };
     }
-    i++;
+    this.pos++;
     return token;
   }
 
+  parse(text: string): DictObject {
+    this.text = text;
+    let state: State = 'default';
+    let key: string = '';
+    let value: string = '';
+    let obj: DictObject = {};
+    let section = '';
 
-  let state: State = 'default';
-  let key: string = '';
-  let value: string = '';
-  type DictObject = { [key: string]: string | DictObject };
-  let obj: DictObject = {};
-  let section = '';
+    let token!: Token;
+    do {
+      token = this.getNextToken();
+      switch (state as State) {
+        case 'default':
+          switch (token.type) {
+            case 'string':
+              state = 'key';
+              key = token.lexeme;
+              break;
+            case 'sb-open':
+              state = 'section-start';
+              break;
+            default:
+              break;
+          }
+          break;
+        case 'section-start':
+          switch (token.type) {
+            case 'string':
+              state = 'section';
+              section = token.lexeme;
+              break;
+            default:
+              break;
+          }
+          break;
+        case 'nested-section':
+          switch (token.type) {
+            case 'string':
+              state = 'section';
+              section += token.lexeme;
+              break;
+            default:
+              break;
+          }
+          break;
+        case 'section':
+          switch (token.type) {
+            case 'sb-close':
+              state = 'default';
+              break;
+            case 'period':
+              state = 'nested-section';
+              section += token.lexeme;
+              break;
+            default:
+              break;
+          }
+          break;
+        case 'key':
+          switch (token.type) {
+            case 'equal':
+              state = 'equal';
+              break;
+            case 'period':
+              state = 'nested-key';
+              key += token.lexeme;
+              break;
+          }
+          break;
+        case 'nested-key':
+          switch (token.type) {
+            case 'string':
+              state = 'key';
+              key += token.lexeme;
+              break;
+            default:
+              break;
+          }
+        case 'equal':
+          switch (token.type) {
+            case 'string':
+              state = 'value';
+              value = token.lexeme;
+              break;
+          }
+          break;
+        case 'value':
+          switch (token.type) {
+            case 'new-line':
+              state = 'default';
+              break;
+            case 'semicolon':
+              state = 'comment';
+              break;
+            default:
+              break;
+          }
+          if (
+            token.type === 'new-line' ||
+            token.type === 'semicolon' ||
+            token.type === 'eof'
+          ) {
+            if (section !== '') {
+              if (obj[section] === undefined) {
+                obj[section] = {};
+              }
+              (obj[section] as DictObject)[key] = value;
+            } else obj[key] = value;
+            key = '';
+            value = '';
+          }
+          break;
+        case 'comment':
+          switch (token.type) {
+            case 'string':
+              break;
+            case 'new-line':
+              state = 'default';
+              break;
+            default:
+              break;
+          }
+        default:
+          break;
+      }
+    } while (token.type !== 'eof');
 
-  let token!: Token;
-  do {
-    token = getNextToken();
-    switch (state as State) {
-      case 'default':
-        switch (token.type) {
-          case 'string':
-            state = 'key';
-            key = token.lexeme;
-            break;
-          case 'sb-open':
-            state = 'section-start';
-            break;
-          default:
-            break;
-        }
-        break;
-      case 'section-start':
-        switch (token.type) {
-          case 'string':
-            state = 'section';
-            section = token.lexeme;
-            break;
-          default:
-            break;
-        }
-        break;
-      case 'nested-section':
-        switch (token.type) {
-          case 'string':
-            state = 'section';
-            section += token.lexeme;
-            break;
-          default:
-            break;
-        }
-        break;
-      case 'section':
-        switch (token.type) {
-          case 'sb-close':
-            state = 'default';
-            break;
-          case 'period':
-            state = 'nested-section';
-            section += token.lexeme;
-            break;
-          default:
-            break;
-        }
-        break;
-      case 'key':
-        switch (token.type) {
-          case 'equal':
-            state = 'equal';
-            break;
-          case 'period':
-            state = 'nested-key';
-            key += token.lexeme;
-            break;
-        }
-        break;
-      case 'nested-key':
-        switch (token.type) {
-          case 'string':
-            state = 'key';
-            key += token.lexeme;
-            break;
-          default:
-            break;
-        }
-      case 'equal':
-        switch (token.type) {
-          case 'string':
-            state = 'value';
-            value = token.lexeme;
-            break;
-        }
-        break;
-      case 'value':
-        switch (token.type) {
-          case 'new-line':
-            state = 'default';
-            break;
-          case 'semicolon':
-            state = 'comment';
-            break;
-          default:
-            break;
-        }
-        if (token.type === 'new-line' || token.type === 'semicolon' || token.type === 'eof') {
-          if (section !== '') {
-            if (obj[section] === undefined) {
-              obj[section] = {};
-            }
-            (obj[section] as DictObject)[key] = value;
-          } else obj[key] = value;
-          key = '';
-          value = '';
-        }
-        break;
-      case 'comment':
-        switch (token.type) {
-          case 'string':
-            break;
-          case 'new-line':
-            state = 'default';
-            break;
-          default:
-            break;
-        }
-      default:
-        break;
-    }
-  } while (token.type !== 'eof');
-
-  return obj;
+    return obj;
+  }
 }
 
 function isCharacter(ch: string): boolean {
@@ -175,4 +200,8 @@ function isCharacter(ch: string): boolean {
 
 function isWhiteSpace(ch: string): boolean {
   return ch === ' ' || ch === '\t';
+}
+
+export function parse(text: string): DictObject {
+  return new Parser().parse(text);
 }
