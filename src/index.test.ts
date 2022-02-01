@@ -6,7 +6,7 @@ describe('Parser', () => {
 key1 = value1
 [section1]
 key2 = value2
-[section2.section]
+[section2.inner1.inner2]
 
 key3 = value3
 `;
@@ -14,7 +14,13 @@ key3 = value3
     const expected = {
       key1: 'value1',
       section1: { key2: 'value2' },
-      ['section2.section']: { key3: 'value3' },
+      section2: {
+        inner1: {
+          inner2: {
+            key3: 'value3',
+          },
+        },
+      },
     };
     expect(obj).toEqual(expected);
   });

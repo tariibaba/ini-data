@@ -190,7 +190,21 @@ class Parser {
       }
     } while (token.type !== 'eof');
 
-    return obj;
+    const newObj: DictObject = {};
+    Object.keys(obj).forEach((key) => {
+      if (typeof obj[key] === 'object') {
+        const sectionParts = key.split('.');
+        let tempObj: DictObject = newObj;
+        let i;
+        for (i = 0; i < sectionParts.length - 1; i++) {
+          if (!tempObj[sectionParts[i]]) tempObj[sectionParts[i]] = {};
+          tempObj = tempObj[sectionParts[i]] as DictObject;
+        }
+        tempObj[sectionParts[i]] = obj[key];
+      } else newObj[key] = obj[key];
+    });
+
+    return newObj;
   }
 }
 
@@ -202,6 +216,6 @@ function isWhiteSpace(ch: string): boolean {
   return ch === ' ' || ch === '\t';
 }
 
-export function parse(text: string): DictObject {
+export function parse(text: string) {
   return new Parser().parse(text);
 }
