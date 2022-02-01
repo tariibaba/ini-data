@@ -206,6 +206,27 @@ class Parser {
 
     return newObj;
   }
+
+  stringify(obj: any): string {
+    const encode = (sectionName: string, data: any) => {
+      let subSections: [string?] = [];
+      let str = '';
+      if (sectionName) str += '\n[' + sectionName + ']\n';
+      for (let key in data) {
+        if (typeof data[key] === 'object') {
+          subSections.push(key);
+        } else str += key + ' = ' + data[key] + '\n';
+      }
+      for (let subSection of subSections) {
+        str += encode(
+          ((sectionName && sectionName + '.') || '') + subSection,
+          data[subSection!]
+        );
+      }
+      return str;
+    };
+    return encode('', obj);
+  }
 }
 
 function isCharacter(ch: string): boolean {
@@ -218,4 +239,8 @@ function isWhiteSpace(ch: string): boolean {
 
 export function parse(text: string) {
   return new Parser().parse(text);
+}
+
+export function stringify(value: any) {
+  return new Parser().stringify(value);
 }

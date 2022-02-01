@@ -1,7 +1,7 @@
-import { parse } from './index';
+import { parse, stringify } from './index';
 
-describe('Parser', () => {
-  it('works', () => {
+describe('module', () => {
+  it('parses INI data to JavaScript object', () => {
     const data = `
 key1 = value1
 [section1]
@@ -23,5 +23,36 @@ key3 = value3
       },
     };
     expect(obj).toEqual(expected);
+  });
+
+  it('converts JavaScript object to INI data', () => {
+    const obj = {
+      a: {
+        b: 1,
+        c: {
+          d: 2,
+          g: {
+            h: 5
+          }
+        },
+        f: 4
+      },
+      e: 3
+    }
+    const str = stringify(obj);
+    const expected = 
+`e = 3
+
+[a]
+b = 1
+f = 4
+
+[a.c]
+d = 2
+
+[a.c.g]
+h = 5
+`;
+    expect(str).toBe(expected)
   });
 });
