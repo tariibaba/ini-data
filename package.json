@@ -1,7 +1,7 @@
 {
   "name": "ini-data",
-  "version": "1.0.0",
-  "description": "Parse INI configuration data to a Javascript object.",
+  "version": "1.1.0",
+  "description": "INI parser and serializer for JavaScript.",
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
