@@ -84,6 +84,9 @@ class Parser {
             case 'sb-open':
               state = 'section-start';
               break;
+            case 'semicolon':
+              state = 'comment';
+              break;
             default:
               break;
           }
