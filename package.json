@@ -1,6 +1,6 @@
 {
   "name": "ini-data",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "INI parser and serializer for JavaScript.",
   "main": "dist/index.js",
   "license": "MIT",
