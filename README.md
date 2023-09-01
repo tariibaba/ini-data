@@ -1,9 +1,13 @@
 # ini-data
+
+## ⛔️ **Warning**: This library was created primarily for educational purposes, and is currently unstable
+
 INI parser and serializer for JavaScript.
 
 ## Usage
 
 ### parse()
+
 Let's say you have this INI file (named **config.ini**):
 
 ```
@@ -28,9 +32,9 @@ const iniConfig = require('ini-data');
 const text = fs.readFileSync('ini.config', 'utf-8');
 const obj = iniConfig.parse(text);
 
-console.log(obj.key);  // value
-console.log(obj.details.password);  // thepassword
-console.log(obj.database.main.values.key1)  // value1
+console.log(obj.key); // value
+console.log(obj.details.password); // thepassword
+console.log(obj.database.main.values.key1); // value1
 ```
 
 ### stringify()
@@ -45,14 +49,15 @@ const obj = {
     password: 'thepassword',
     details: {
       item1: 'value1',
-    }
+    },
   },
-  key: 'value'
+  key: 'value',
 };
 fs.writeFileSync('data.ini', ini.stringify(obj));
 ```
 
 **data.ini** will contain the following INI data:
+
 ```
 key = value
 
